@@ -1,50 +1,85 @@
-
-			<!DOCTYPE html>
-			<html>
-			<head>
-				<meta charset="UTF-8">
-				<title>我的博客</title>
-				<style>
-					body {
-						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-						line-height: 1.6;
-						max-width: 800px;
-						margin: 0 auto;
-						padding: 20px;
-					}
-					.header {
-						text-align: center;
-						margin-bottom: 40px;
-					}
-					.post-item {
-						margin-bottom: 30px;
-						padding-bottom: 20px;
-						border-bottom: 1px solid #eee;
-					}
-					.post-date {
-						color: #666;
-						font-size: 0.9em;
-					}
-				</style>
-			</head>
-			<body>
-				<div class="header">
-					<h1>我的博客</h1>
-					<p>我的个人博客</p>
-				</div>
-				<div class="posts">
-					
-			<div class="post-item">
-				<h2><a href="xia-ling-shi.html">夏令时</a></h2>
-				<div class="post-date">2024-02</div>
-			</div>
-		
-			<div class="post-item">
-				<h2><a href="prompt-he-ji-fa-bu.html">Prompt 合集发布</a></h2>
-				<div class="post-date">2024-02</div>
-			</div>
-		
-				</div>
-			</body>
-			</html>
-		
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>solidSpoon's Blog</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: #2c3e50;
+        }
+        .header .author {
+            font-size: 1.2em;
+            color: #34495e;
+            margin: 10px 0;
+        }
+        .header .motto {
+            font-style: italic;
+            color: #7f8c8d;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        .header .description {
+            color: #666;
+            margin-top: 20px;
+        }
+        .post-item {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease;
+        }
+        .post-item:hover {
+            transform: translateY(-2px);
+        }
+        .post-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>solidSpoon's Blog</h1>
+        <div class="author">solidSpoon</div>
+        <div class="motto">方向是比速度更重要的追求</div>
+        <div class="description">我的个人博客</div>
+    </div>
+    <div class="posts">
+        <div class="post-item">
+            <h2><a href="xia-ling-shi.html">夏令时</a></h2>
+            <div class="post-date">2024-02</div>
+        </div>
+        <div class="post-item">
+            <h2><a href="prompt-he-ji-fa-bu.html">Prompt 合集发布</a></h2>
+            <div class="post-date">2024-02</div>
+        </div>
+    </div>
+</body>
+</html>
