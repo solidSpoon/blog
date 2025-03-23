@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>Windows 交换 ESC 和 CapsLock</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,30 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>Windows 交换 ESC 和 CapsLock</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2023-11</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <h2 id="交换">交换</h2>
+<p>将下面代码保存成 <code>.reg</code> 文件</p>
+<pre><code>Windows Registry Editor Version 5.00
 
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Keyboard Layout]
+&quot;Scancode Map&quot;=hex:00,00,00,00,00,00,00,00,03,00,00,00,3a,00,01,00,01,00,3a,00,00,00,00,00
+</code></pre>
+<p>运行然后重启</p>
+<h1 id="恢复">恢复</h1>
+<procedure title="恢复" type="steps" id="">
+    <step>Win + R</step>
+    <step>运行 `regedit`</step>
+    <step>打开 `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Keyboard Layout`</step>
+    <step>删除该映射文件，再重启电脑，键盘就可以恢复按键原本的位置了。</step>
+</procedure>
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="docker-network.html" class="prev-post">← Docker 网络相关命令</a>
+                    <a href="cha-ru-cao-zuo-zhong-de-si-suo-xian-xiang.html" class="next-post">插入操作中的死锁现象 →</a>
                 </div>
             </div>
 
@@ -654,13 +649,10 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#交换" class="outline-link">交换</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#恢复" class="outline-link">恢复</a>
                         </li>
                     </ul>
                 </div>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>MongoDB 初探</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,243 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>MongoDB 初探</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-04</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <h1 id="mongodb-初探">MongoDB 初探</h1>
+<p>对于已经熟悉 MySQL 的同学来说，初次接触 MongoDB 可能会不习惯它的语法，本篇文章将通过一个简单的示例带你入门 MongoDB。</p>
+<h2 id="准备">准备</h2>
+<p>对于 MongoDB 新手，可以借助 DataGrip 来学习MongoDB 语法。在 MongoDB 中实现准备好两个表 &quot;old&quot; 和 &quot;new&quot;，并随意插入一些数据</p>
+<pre><code class="language-js">db.createCollection(&quot;new&quot;)  
+db.createCollection(&quot;old&quot;)
+
+db.old.insertOne({  
+id: 1,  
+name: old  
+})  
+db.new.insertOne({  
+id: 2,  
+name: 13,  
+goods: 1  
+})
+// 随意插入数据
+</code></pre>
+<p>在 DataGrip 中输入如下的 SQL 语句</p>
+<pre><code class="language-sql">select * from &quot;new&quot; as aleft left join &quot;old&quot; as bright on aleft.id = bright.id;
+</code></pre>
+<p>然后在这条语句上「右键」，选择 「Show JS Script」，会发现 DataGrip 会帮助我们将 SQL 语句转为 MongoDB 语句，接下来我们通过研究这个语句来体会 MongoDB 的基本思想</p>
+<pre><code class="language-js">db.getSiblingDB(&quot;test&quot;).getCollection(&quot;new&quot;).aggregate([  
+  {  
+    $project: {&quot;aleft&quot;: &quot;$$ROOT&quot;, &quot;_id&quot;: 0}  
+  },  
+  {  
+    $lookup: {  
+      localField: &quot;aleft.id&quot;,  
+      from: &quot;old&quot;,  
+      foreignField: &quot;id&quot;,  
+      as: &quot;bright&quot;  
+    }  
+  },  
+  {  
+    $unwind: {  
+      path: &quot;$bright&quot;,  
+      preserveNullAndEmptyArrays: true  
+    }  
+  },  
+  {  
+    $replaceRoot: {  
+      newRoot: {$mergeObjects: [&quot;$aleft&quot;, &quot;$bright&quot;, &quot;$$ROOT&quot;]}  
+    }  
+  },  
+  {  
+    $project: {&quot;aleft&quot;: 0, &quot;bright&quot;: 0}  
+  }  
+])
+</code></pre>
+<h2 id="分析">分析</h2>
+<h3 id="aggregate">aggregate</h3>
+<p><code>db.collection.aggregate(管道，选项)</code> 方法参数接收一个包含了若干操作的数组，类似于 Linux 中的管道一样，对集合依次进行操作。</p>
+<h3 id="project">project</h3>
+<p>第一个操作为 <code>$project</code> ，这是一个映射操作</p>
+<pre><code class="language-json">  {  
+    $project: {&quot;aleft&quot;: &quot;$$ROOT&quot;, &quot;_id&quot;: 0}  
+  }
+</code></pre>
+<p>其中 <code>$$ROOT</code> 即引用顶级文档，效果是将当前文档（行）的所有数据放到 <code>aleft</code> 字段下。<code>&quot;_id&quot;: 0</code> 代表隐藏 <code>_id</code> 行，当设定为 <code>&quot;_id&quot;: 1</code> 时会展示 <code>_id</code> 行，（<code>_id</code> 由 MongoDB 自动生成）结果示意如下：</p>
+<pre><code class="language-json">[  
+  {  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+    }  
+  },  
+  {  
+    &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce445b67f62529d94a83e&quot;}, // 当 _id: 1 时会展示 id 
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce445b67f62529d94a83e&quot;},  
+      &quot;id&quot;: 2,  
+      &quot;name&quot;: 13,  
+      &quot;goods&quot;: 1  
+    }  
+  }  
+]
+</code></pre>
+<h3 id="lookup">lookup</h3>
+<p>第二个操作为</p>
+<pre><code class="language-json">  {  
+    $lookup: {  
+      localField: &quot;aleft.id&quot;,  
+      from: &quot;old&quot;,  
+      foreignField: &quot;id&quot;,  
+      as: &quot;bright&quot; 
+    } 
+  }
+</code></pre>
+<p>顾名思义，这是一个查找操作，它根据第一步结果中的 <code>aleft.id</code> 字段，在 <code>old</code> 表中查找 <code>id</code> 与之相等的文档（行），并将所有匹配的结果以数组方式放在 <code>bright</code> 字段下，结果示意如下：</p>
+<pre><code class="language-json">[  
+  {  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+     },  
+    &quot;bright&quot;: [  
+      {  
+        &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce82ab67f62529d94a84c&quot;},  
+        &quot;id&quot;: 1,  
+        &quot;name&quot;: &quot;haha&quot;  
+      },  
+      {  
+        &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce867b67f62529d94a84e&quot;},  
+        &quot;id&quot;: 1,  
+        &quot;vbsss&quot;: &quot;haha&quot;  
+      }  
+    ]  
+  }
+]
+</code></pre>
+<h3 id="unwind">unwind</h3>
+<p>第三个操作为</p>
+<pre><code class="language-json">  {  
+    $unwind: {  
+      path: &quot;$bright&quot;,  
+      preserveNullAndEmptyArrays: true
+    } 
+  } 
+</code></pre>
+<p>这个操作指明了使用 <code>$bright</code> 字段，这个字段是一个数组，<code>$unwind</code> 操作会将 <code>$bright</code> 中的每一个元素与 <code>aleft</code> 组合</p>
+<pre><code class="language-json">[  
+  {  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+    },  
+    &quot;bright&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce82ab67f62529d94a84c&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: &quot;haha&quot;  
+     }  
+  },  
+  {  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+     },  
+    &quot;bright&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce867b67f62529d94a84e&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;vbsss&quot;: &quot;haha&quot;  
+     }  
+  }
+]
+</code></pre>
+<p>至此，我们已经将两个表中关联的行组合在了一起，接下来需要将这个结构简化一下</p>
+<h3 id="replaceroot">replaceRoot</h3>
+<p>第四个操作为</p>
+<pre><code class="language-json">  {  
+    $replaceRoot: {  
+      newRoot: {$mergeObjects: [&quot;$aleft&quot;, &quot;$bright&quot;, &quot;$$ROOT&quot;]}  
+    }  
+  },
+</code></pre>
+<h3 id="mergeobjects">mergeObjects</h3>
+<p><code>$mergeObjects</code> 操作会将参数中元素的内容进行合并，如果有重复，后面的值会覆盖前面的值，比如下面的这个文档</p>
+<pre><code class="language-json">  {  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+    },  
+    &quot;bright&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce82ab67f62529d94a84c&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: &quot;haha&quot;  
+     }  
+  },
+</code></pre>
+<p>执行 <code>$mergeObjects: [&quot;$aleft&quot;, &quot;$bright&quot;, &quot;$$ROOT&quot;]</code> 操作后结果如下</p>
+<pre><code class="language-json">  {  
+    &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+    },  
+    &quot;bright&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce82ab67f62529d94a84c&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: &quot;haha&quot;  
+    },  
+    &quot;id&quot;: 1,  
+    &quot;name&quot;: &quot;haha&quot;  
+  }
+</code></pre>
+<h3 id="replaceroot">replaceRoot</h3>
+<p><code>$replaceRoot</code> 将指定的文档提升到顶层，并丢弃顶层所有其他字段。</p>
+<pre><code class="language-json">[  
+  {  
+    &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+    &quot;aleft&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: 12  
+    },  
+    &quot;bright&quot;: {  
+      &quot;_id&quot;: {&quot;$oid&quot;: &quot;624ce82ab67f62529d94a84c&quot;},  
+      &quot;id&quot;: 1,  
+      &quot;name&quot;: &quot;haha&quot;  
+    },  
+    &quot;id&quot;: 1,  
+    &quot;name&quot;: &quot;haha&quot;  
+  }
+]
+</code></pre>
+<p>至此，只要将 <code>aleft</code> 和 <code>bright</code> 两个参数删掉就得到了最后的结果，操作为</p>
+<pre><code class="language-json">  {  
+    $project: {&quot;aleft&quot;: 0, &quot;bright&quot;: 0}  
+  }
+</code></pre>
+<p>结果示意如下</p>
+<pre><code class="language-json">[  
+  {  
+    &quot;_id&quot;: {&quot;$oid&quot;: &quot;6247f1e253a1be11c3b88d8b&quot;},  
+    &quot;id&quot;: 1,  
+    &quot;name&quot;: &quot;haha&quot;  
+  }
+]
+</code></pre>
+<h2 id="其他">其他</h2>
+<p>MongoDB 中的 JOIN 操作还是十分复杂的，与 MySQL 不同， MongoDB 中的文档结构并没有限制，所以可以采用<a href="https://www.mongodb.com/docs/v4.2/tutorial/query-embedded-documents/">嵌套文档</a>的方式将本来需要关联的数据保存在一起，从而避免 JOIN 操作</p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="clashforwindows-tap-mo-shi-wu-fa-zheng-chang-lian-jie-wang-luo.html" class="prev-post">← ClashForWindows TAP 模式无法正常连接网络</a>
+                    <a href="suo-ku-da-shi.html" class="next-post">锁库大师 →</a>
                 </div>
             </div>
 
@@ -654,13 +862,18 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#mongodb-初探" class="outline-link">MongoDB 初探</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#准备" class="outline-link">准备</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#分析" class="outline-link">分析</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#其他" class="outline-link">其他</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>

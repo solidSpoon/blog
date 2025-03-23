@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>删除或修改 Windows 中被占用的文件</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,54 +617,31 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>删除或修改 Windows 中被占用的文件</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2021-02</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
+                    <p>有时候我们想要在 Windows 中修改或删除一个文件，会收到一个「文件正在使用」的消息，而我们又不知道是哪个程序在使用，这时候该怎么办呢？</p>
+<p>当某一运行中的进程持有一个资源的句柄时，我们就不能修改该资源。解决办法是结束所有对资源有句柄的进程。我们可以在「资源监视器」中找到持有该句柄的所有进程，资源监视器的打开方式如下</p>
 <ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
+<li>方法 1：</li>
 </ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
+<p>&lt;Win + R&gt;，运行 <code>resmon.exe</code></p>
 <ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
+<li>方法 2：</li>
 </ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+<p>开始菜单 👉 所有程序 👉 Windiws 管理工具 👉 资源监视器</p>
+<p>打开后选中就 CPU ，在「关联的句柄」中输入要释放的文件，即可找到持有该文件按句柄的所有进程，右键结束即可</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/20210216212626.png" alt="image"></p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="chu-shi-jshell.html" class="prev-post">← 初识 JShell</a>
+                    <a href="ru-he-yong-zheng-ze-biao-da-shi-pi-pei-3-de-bei-shu.html" class="next-post">如何用正则表达式匹配 3 的倍数 →</a>
                 </div>
             </div>
 
-            <div class="outline-wrapper">
-                <div class="outline">
-                    <div class="outline-title">目录</div>
-                    <ul class="outline-list">
-                        <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
     <footer class="blog-footer">

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>Redis 批量删除 Key</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,39 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>Redis 批量删除 Key</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-10</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <h2 id="普通删除">普通删除</h2>
+<pre><code class="language-bash">DEL key1 key2 key3
+</code></pre>
+<h2 id="管道">管道</h2>
+<p>可用<code>keys &quot;str*&quot;</code> 列出要删除的key，接linux管道删除</p>
+<p><strong>实例：</strong></p>
+<p>根据通配符查看待删除的key</p>
+<pre><code class="language-bash">redis-cli KEYS &quot;*_MALL_GOODS_KEY”
+</code></pre>
+<p>接linux管道删除之</p>
+<pre><code class="language-bash">redis-cli KEYS &quot;*_MALL_GOODS_KEY*&quot;|xargs redis-cli DEL
+</code></pre>
+<h2 id="lua-删除">lua 删除</h2>
+<p><code>keys *</code> 命令在数据量很大的情况下，直接在 redis cli 中执行会严重影响服务器性能，更好的方式是在 lua 脚本中执行</p>
+<p><code>eval</code> 命令可以执行执行 lua 脚本</p>
+<p>lua方式通配符查找</p>
+<pre><code class="language-bash">eval &quot;return redis.call(&#39;keys&#39;,KEYS[1])&quot; 1 *_MALL_GOODS_KEY*
+</code></pre>
+<pre><code class="language-bash">eval &quot;return redis.call(&#39;keys&#39;,KEYS[1])&quot; 1 *
+</code></pre>
+<p>lua 方式通配符删除</p>
+<pre><code class="language-bash">eval &quot;return redis.call(&#39;del&#39;,unpack(redis.call(&#39;keys&#39;,ARGV[1])))&quot; 0 *_MALL_GOODS_KEY*
+</code></pre>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="spring-boot-da-yin-shi-wu-ri-zhi.html" class="prev-post">← Spring Boot 打印事务日志</a>
+                    <a href="mysql-si-suo-shi-de-yi-zhong-jie-jue-ban-fa.html" class="next-post">MySql 死锁时的一种解决办法 →</a>
                 </div>
             </div>
 
@@ -654,13 +658,13 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#普通删除" class="outline-link">普通删除</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
+                            <a href="#管道" class="outline-link">管道</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#lua-删除" class="outline-link">lua 删除</a>
                         </li>
                     </ul>
                 </div>

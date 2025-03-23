@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>如何在 IntelliJ IDEA 中使用增强的 HotSwap 功能</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,126 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>如何在 IntelliJ IDEA 中使用增强的 HotSwap 功能</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2024-11</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
+                    <h2 id="概述">概述</h2>
+<p>在 Java 开发中，HotSwap 是一项允许开发者在不重启应用程序的情况下更新运行中代码的技术。虽然 IntelliJ IDEA 自带了 HotSwap 功能，但其使用存在诸多限制，难以满足复杂的开发需求。另一方面，JRebel 作为一个强大的热部署工具，虽然功能强大，但其高昂的价格可能不适合所有开发者或团队。</p>
+<p>本文将指导您如何在 IntelliJ IDEA 中设置和使用增强的 HotSwap 功能，作为一种折中的解决方案。通过使用 DCEVM 和 HotSwapAgent，您可以克服标准 HotSwap 的限制，实现更灵活的代码热更新，同时避免了高额的许可费用。这种方法提供了一个免费且功能相对强大的替代方案，能够显著提升开发效率。</p>
+<p>在接下来的内容中，我们将详细介绍如何配置和使用这些工具，使您能够在日常开发中享受到近似 JRebel 的热部署体验，而无需支付额外费用。这对于需要频繁修改和测试代码的开发者来说，是一个非常有价值的技能。</p>
+<h2 id="背景知识">背景知识</h2>
+<h3 id="hotswap">HotSwap</h3>
+<p>HotSwap 是 Java 虚拟机（JVM）的一个特性，允许开发者在调试过程中替换正在运行的代码。它最初在 J2SE 1.4 中引入，旨在提高开发效率。然而，标准的 HotSwap 功能有很多限制，如只能修改方法体等。这些限制源于 JVM 的设计，因为允许任意的运行时代码修改可能会导致严重的内存和性能问题。</p>
+<h3 id="dcevm-dynamic-code-evolution-vm">DCEVM (Dynamic Code Evolution VM)</h3>
+<p>DCEVM 是 JVM 的一个修改版本，它极大地扩展了 Java HotSwap 的能力。DCEVM 项目始于 2010 年，旨在克服标准 HotSwap 的限制。它允许在运行时进行更广泛的代码更改，包括：</p>
 <ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
+<li>添加和删除类成员</li>
+<li>修改方法签名</li>
+<li>更改类层次结构</li>
+<li>重新定义枚举常量</li>
 </ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
+<p>DCEVM 通过修改 JVM 的内部实现来实现这些功能，使得更复杂的代码更改成为可能。</p>
+<h3 id="hotswapagent">HotSwapAgent</h3>
+<p>HotSwapAgent 是一个 Java agent，它与 DCEVM 配合使用，提供额外的类重定义和重加载功能。它的主要特点包括：</p>
 <ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
+<li>自动检测类文件的变化并重新加载它们</li>
+<li>支持各种 Java 框架和库的热重载</li>
+<li>提供插件系统以扩展其功能</li>
 </ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
+<p>HotSwapAgent 通过在类加载时注入额外的字节码来工作，这使得它能够捕获和处理类的变化。</p>
+<h3 id="hotswaphelper">HotSwapHelper</h3>
+<p>HotSwapHelper 是一个为 IntelliJ IDEA 设计的插件，它简化了 DCEVM 和 HotSwapAgent 的使用过程。这个插件的主要功能包括：</p>
 <ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
+<li>在 IDEA 界面中添加一个快捷按钮来启动增强的 HotSwap 调试</li>
+<li>自动配置必要的 VM 参数</li>
+<li>提供简单的用户界面来管理 HotSwap 相关的设置</li>
 </ul>
+<p>HotSwapHelper 的目标是使开发者能够轻松地在他们的日常开发工作流程中集成和使用增强的 HotSwap 功能。</p>
+<h2 id="前提条件">前提条件</h2>
+<ul>
+<li>安装了 IntelliJ IDEA</li>
+<li>已安装 JDK 1.8.0_181（本教程以此版本为例，DCEVM 支持特定的 JDK 版本）</li>
+<li>基本了解 Java 开发和调试过程</li>
+</ul>
+<h2 id="步骤">步骤</h2>
+<h3 id="1-了解标准-hotswap-的限制">1. 了解标准 HotSwap 的限制</h3>
+<p>标准 HotSwap 有以下限制：</p>
+<ul>
+<li>仅支持修改方法体</li>
+<li>不支持添加或删除类成员</li>
+<li>当修改的方法在调用栈中时，更改可能不会立即生效</li>
+</ul>
+<p>这些限制大大降低了开发效率，尤其是在处理复杂的代码更改时。</p>
+<h3 id="2-安装-dcevm">2. 安装 DCEVM</h3>
+<ol>
+<li>下载 <a href="https://www.oracle.com/hk/java/technologies/javase/javase8-archive-downloads.html">JDK 1.8.0_181</a>（如果尚未安装）</li>
+<li>从 <a href="https://dcevm.github.io/">DCEVM 官网</a> 下载对应的 Java 8 update 181 版本补丁</li>
+<li>运行下载的 DCEVM-8u181-installer.jar</li>
+<li>在安装器中选择 &quot;Install DCEVM as altjvm&quot;</li>
+</ol>
+<p>安装 DCEVM 不会影响您现有的 JVM 安装，它作为一个替代 JVM 存在。</p>
+<h3 id="3-安装-hotswaphelper-插件">3. 安装 HotSwapHelper 插件</h3>
+<ol>
+<li>在 IntelliJ IDEA 中，转到 <ui-path>File | Settings | Plugins</ui-path></li>
+<li>搜索 &quot;HotSwapHelper&quot; 并安装</li>
+</ol>
+<p>这个插件会在 IDEA 的工具栏中添加一个 &quot;HotSwap Debug&quot; 按钮，使得启动增强的 HotSwap 调试变得简单。</p>
+<h3 id="4-配置和使用增强的-hotswap">4. 配置和使用增强的 HotSwap</h3>
+<ol>
+<li>在 IntelliJ IDEA 中，创建或打开一个 Java 项目</li>
+<li>点击工具栏中新增的 &quot;HotSwap Debug&quot; 按钮启动调试</li>
+<li>在控制台中查看日志，确认是否出现 <code>org.hotswap.agent.HotswapAgent</code> 字样</li>
+</ol>
+<p>当你看到 HotswapAgent 相关的日志时，说明增强的 HotSwap 功能已经成功启动。</p>
+<h3 id="5-应用代码更改">5. 应用代码更改</h3>
+<ol>
+<li><p>在调试模式下，修改你的代码</p>
+</li>
+<li><p>触发重新编译：</p>
+<ul>
+<li>在 IDEA 中，使用快捷键 Ctrl+F9 (Windows/Linux) 或 Cmd+F9 (Mac) 重新编译修改的类</li>
+<li>或者，在工具栏中点击 &quot;Build Project&quot; 按钮</li>
+</ul>
+</li>
+<li><p>DCEVM 和 HotSwapAgent 会自动检测并应用这些更改</p>
+</li>
+</ol>
+<h2 id="结果">结果</h2>
+<p>成功配置和应用更改后，您将能够：</p>
+<ul>
+<li>修改方法签名</li>
+<li>添加或删除类成员</li>
+<li>在触发重新编译后，即时看到代码更改的效果，即使方法在调用栈中</li>
+</ul>
+<p>这些增强大大提高了开发效率，允许您在不重启应用程序的情况下进行更广泛的代码更改。但请注意，虽然 DCEVM 和 HotSwapAgent 大大扩展了热更新的能力，某些复杂的更改（如更改类层次结构）可能仍需要重启应用才能完全生效。</p>
+<h2 id="注意事项">注意事项</h2>
+<ul>
+<li>某些更改可能需要手动触发类的重新加载。在这种情况下，你可能需要重新调用包含更改的方法或重新进入相关的代码路径。</li>
+<li>虽然 DCEVM 允许在运行时进行广泛的代码更改，但它并不能解决所有的热更新场景。对于非常复杂的更改，重启应用可能仍然是最安全和最可靠的选择。</li>
+<li>在生产环境中使用热更新技术时要格外小心，因为它可能引入意外的行为或性能问题。</li>
+</ul>
+<h2 id="故障排除">故障排除</h2>
+<ul>
+<li>如果未看到 &quot;HotSwap Debug&quot; 按钮，请确保已正确安装 HotSwapHelper 插件。</li>
+<li>如果日志中没有 HotswapAgent 相关信息，检查 DCEVM 是否正确安装。</li>
+<li>如果某些更改没有生效，尝试触发一个完整的类重新加载（可能需要调用包含更改的类的方法）。</li>
+</ul>
+<h2 id="相关资源">相关资源</h2>
+<ul>
+<li><a href="https://www.jetbrains.com/help/idea/altering-the-program-s-execution-flow.html">IntelliJ IDEA 官方文档：Altering the Program&#39;s Execution Flow</a></li>
+<li><a href="https://youtrack.jetbrains.com/articles/SUPPORT-A-725/How-to-use-Dynamic-Code-Evolution-VM-DCEVM-in-IntelliJ-Java-debugger">IntelliJ 官方指南：How to use Dynamic Code Evolution VM (DCEVM) in IntelliJ Java debugger</a></li>
+<li><a href="https://dcevm.github.io/">DCEVM 项目页面</a></li>
+<li><a href="https://hotswapagent.org/">HotSwapAgent 官网</a></li>
+<li><a href="https://github.com/gejun123456/HotSwapHelper">HotSwapHelper GitHub 仓库</a></li>
+</ul>
+<p>通过使用 DCEVM、HotSwapAgent 和 HotSwapHelper，您可以显著提升 Java 开发的效率，减少因代码更改而导致的应用重启次数。这对于大型项目或有复杂启动过程的应用尤其有益。</p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="cha-ru-cao-zuo-zhong-de-si-suo-xian-xiang.html" class="prev-post">← 插入操作中的死锁现象</a>
+                    <a href="ru-he-zai-easyexcel-de-handler-zhong-an-quan-she-zhi-dan-yuan-ge-yang-shi.html" class="next-post">如何在 EasyExcel 的 Handler 中安全设置单元格样式 →</a>
                 </div>
             </div>
 
@@ -654,13 +745,59 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#概述" class="outline-link">概述</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
+                            <a href="#背景知识" class="outline-link">背景知识</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#hotswap" class="outline-link">HotSwap</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#dcevm-dynamic-code-evolution-vm" class="outline-link">DCEVM (Dynamic Code Evolution VM)</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#hotswapagent" class="outline-link">HotSwapAgent</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#hotswaphelper" class="outline-link">HotSwapHelper</a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#前提条件" class="outline-link">前提条件</a>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#步骤" class="outline-link">步骤</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#1-了解标准-hotswap-的限制" class="outline-link">1. 了解标准 HotSwap 的限制</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#2-安装-dcevm" class="outline-link">2. 安装 DCEVM</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#3-安装-hotswaphelper-插件" class="outline-link">3. 安装 HotSwapHelper 插件</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#4-配置和使用增强的-hotswap" class="outline-link">4. 配置和使用增强的 HotSwap</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#5-应用代码更改" class="outline-link">5. 应用代码更改</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#结果" class="outline-link">结果</a>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#注意事项" class="outline-link">注意事项</a>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#故障排除" class="outline-link">故障排除</a>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#相关资源" class="outline-link">相关资源</a>
                         </li>
                     </ul>
                 </div>

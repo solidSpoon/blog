@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>Docker 网络相关命令</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,54 +617,58 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>Docker 网络相关命令</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2023-06</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
+                    <blockquote>
 <ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
+<li><code>docker network create</code> 创建网络</li>
+<li><code>docker network connect</code> 将容器连接到网络</li>
+<li><code>docker network ls</code> 列出所有网络</li>
+<li><code>docker network rm</code> 删除网络</li>
+<li><code>docker network disconnect</code> 将容器从网络断开</li>
+<li><code>docker network inspect</code> 查看网络信息</li>
 </ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+</blockquote>
+<p>列出所有网络</p>
+<pre><code class="language-bash">docker network ls
+</code></pre>
+<p>创建网络</p>
+<pre><code class="language-bash">docker network create &lt;my-net&gt;
+</code></pre>
+<p>查看网络信息</p>
+<pre><code class="language-bash">docker network inspect &lt;my-net&gt;
+</code></pre>
+<p>查看容器的信息</p>
+<pre><code class="language-bash">docker network inspect &lt;my-docker-name&gt;
+</code></pre>
+<p>将一个容器连接到网络</p>
+<pre><code class="language-bash">docker network connect &lt;my-net&gt; &lt;my-docker-name&gt;
+</code></pre>
+<p>创建容器时就指定网络，以 busybox 为例</p>
+<pre><code class="language-bash">docker run -it --rm --name busybox1 --network &lt;my-net&gt; busybox sh
+</code></pre>
+<p>给容器在指定网络中起一个别名，网络中的容器可以通过别名访问</p>
+<pre><code class="language-bash">docker run --net &lt;my-net&gt; -itd --name &lt;my-docker-name&gt; --net-alias &lt;alias-name&gt; busybox
+</code></pre>
+<p>多个容器起一个别名时第一个起的有效，第一个下线后第二个有效</p>
+<p>将容器从网络断开</p>
+<pre><code class="language-bash">docker network disconnect &lt;my-net&gt; &lt;my-docker-name&gt;
+</code></pre>
+<p>删除创建的网络</p>
+<pre><code class="language-bash">docker network rm &lt;my-net&gt;
+</code></pre>
+<p>需要保证该网络没有容器链接</p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="cha-kan-linux-fu-wu-qi-ri-zhi-de-ji-qiao.html" class="prev-post">← 查看 Linux 服务器日志的技巧</a>
+                    <a href="windows-jiao-huan-esc-he-capslock.html" class="next-post">Windows 交换 ESC 和 CapsLock →</a>
                 </div>
             </div>
 
-            <div class="outline-wrapper">
-                <div class="outline">
-                    <div class="outline-title">目录</div>
-                    <ul class="outline-list">
-                        <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
     <footer class="blog-footer">

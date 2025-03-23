@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>解决 Windows 中文件正在使用的问题</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,27 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>解决 Windows 中文件正在使用的问题</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-06</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <p>当我们试图修改或删除某个文件时，可能收到一个“文件正在使用”的提示。</p>
+<h2 id="通过资源监视器找到使用者">通过资源监视器找到使用者</h2>
+<procedure title="打开资源监视器" type="choices" id="open-resource-manager">
+   <step>使用快捷键 <shortcut>Win+R</shortcut> 打开"运行"对话框，输入 resmon.exe，按回车键运行。</step>
+   <step>点击开始菜单，前往<ui-path> 所有程序 | Windows 管理工具 | 资源监视器</ui-path>。</step>
+</procedure>
 
+<procedure title="使用资源监视器关闭目标程序" type="steps" id="procedure-id">
+   <step>选择 "CPU" 标签</step>
+   <step>在“关联的句柄”搜索框中输入您想要释放的文件名</step>
+   <step>右键点击相应的进程，选择 "结束进程"</step>
+</procedure>
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="spring-shi-wu-chuan-bo-te-xing.html" class="prev-post">← Spring 事务传播特性</a>
+                    <a href="spring-boot-da-yin-shi-wu-ri-zhi.html" class="next-post">Spring Boot 打印事务日志 →</a>
                 </div>
             </div>
 
@@ -654,13 +646,7 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#通过资源监视器找到使用者" class="outline-link">通过资源监视器找到使用者</a>
                         </li>
                     </ul>
                 </div>

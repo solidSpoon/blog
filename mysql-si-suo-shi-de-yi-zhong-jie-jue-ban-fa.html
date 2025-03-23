@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>MySql 死锁时的一种解决办法</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,54 +617,159 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>MySql 死锁时的一种解决办法</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-12</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <p>查看数据库的线程情况</p>
+<pre><code class="language-sql">show processlist;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>User</th>
+<th>Host</th>
+<th>db</th>
+<th>Command</th>
+<th>Time</th>
+<th>State</th>
+<th>Info</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>9930577</td>
+<td>business_web</td>
+<td>192.168.1.21:45503</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>153</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>9945825</td>
+<td>business_web</td>
+<td>192.168.1.25:49518</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>43</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>9946322</td>
+<td>business_web</td>
+<td>192.168.1.23:44721</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>153</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>9960167</td>
+<td>business_web</td>
+<td>192.168.3.28:2409</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>93</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>9964484</td>
+<td>business_web</td>
+<td>192.168.1.21:24280</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>7</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>9972499</td>
+<td>business_web</td>
+<td>192.168.3.28:35752</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>13</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>10000117</td>
+<td>business_web</td>
+<td>192.168.3.28:9149</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>6</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>10002523</td>
+<td>business_web</td>
+<td>192.168.3.29:42872</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>6</td>
+<td></td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>10007545</td>
+<td>business_web</td>
+<td>192.168.1.21:51379</td>
+<td>business_db</td>
+<td>Sleep</td>
+<td>155</td>
+<td></td>
+<td>NULL</td>
+</tr>
+</tbody></table>
+<p>查看 <code>State</code> 字段有没有 wait 状态的线程，如果没有看到正在执行的慢SQL记录线程，再去查看innodb的事务表INNODB_TRX，看下里面是否有正在锁定的事务线程，看看ID是否在show<br>full processlist里面的sleep线程中，如果是，就证明这个sleep的线程事务一直没有commit或者rollback而是卡住了，我们需要手动kill掉。</p>
+<pre><code class="language-sql">SELECT * FROM information_schema.INNODB_TRX;
+</code></pre>
+<pre><code class="language-Bash">*************************** 1. row ***************************
+trx_id: 20866
+trx_state: LOCK WAIT
+trx_started: 2014-07-31 10:42:35
+trx_requested_lock_id: 20866:617:3:3
+trx_wait_started: 2014-07-30 10:42:35
+trx_weight: 2
+trx_mysql_thread_id: 9930577
+trx_query: delete from dltask where id=1
+trx_operation_state: starting index read
+trx_tables_in_use: 1
+trx_tables_locked: 1
+trx_lock_structs: 2
+trx_lock_memory_bytes: 376
+trx_rows_locked: 1
+trx_rows_modified: 0
+trx_concurrency_tickets: 0
+trx_isolation_level: READ COMMITTED
+trx_unique_checks: 1
+trx_foreign_key_checks: 1
+trx_last_foreign_key_error: NULL
+trx_adaptive_hash_latched: 0
+trx_adaptive_hash_timeout: 10000
+trx_is_read_only: 0
+trx_autocommit_non_locking: 0
+</code></pre>
+<p>终止上面的线程</p>
+<pre><code class="language-sql">kill 9930577;
+</code></pre>
+<p><a href="https://www.cnblogs.com/farb/p/MySqlDeadLockOneOfSolutions.html">MySql 死锁时的一种解决办法</a></p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="redis-pi-liang-shan-chu-key.html" class="prev-post">← Redis 批量删除 Key</a>
+                    <a href="shi-yong-git-worktree-jiang-tong-yi-ge-xiang-mu-fen-lie-cheng-duo-ge-ben-di-mu-lu.html" class="next-post">使用 Git worktree 将同一个项目分裂成多个本地目录 →</a>
                 </div>
             </div>
 
-            <div class="outline-wrapper">
-                <div class="outline">
-                    <div class="outline-title">目录</div>
-                    <ul class="outline-list">
-                        <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
-                        </li>
-                        <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
     <footer class="blog-footer">

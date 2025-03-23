@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>初识 JShell</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,137 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>初识 JShell</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2021-02</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
-<ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
-</ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
-<ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
-</ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+                    <h2 id="初识-jshell">初识 JShell</h2>
+<p>升级到 Java 11 后，有了 JShell 这个工具（其实 Java 9 就有了），它让 Java 可以像脚本语言一样直接在命令行交互，听起来好神奇，快来体验一下！！</p>
+<h2 id="启动与退出">启动与退出</h2>
+<p>保险起见，得先弄明白启动与退出</p>
+<p>直接在命令行输入 <code>jshell</code> 就启动了</p>
+<pre><code class="language-bash">➜  ~cedar jshell
+|  Welcome to JShell -- Version 11.0.9.1
+|  For an introduction type: /help intro
+
+jshell&gt;
+</code></pre>
+<p>退出方式稍微有一些特别，命令是 <code>/exit</code></p>
+<pre><code class="language-bash">jshell&gt; /exit
+|  Goodbye
+</code></pre>
+<p><code>jshell -h</code> 可以发现提供了几个选项，这仨比较有意思</p>
+<pre><code class="language-bash">    -q                    Quiet feedback.  Same as: --feedback concise
+    -s                    Really quiet feedback.  Same as: --feedback silent
+    -v                    Verbose feedback.  Same as: --feedback verbose
+</code></pre>
+<p>试了一下 <code>-s</code> 非常安静的反馈，看起来真的清爽</p>
+<pre><code class="language-bash">➜  ~cedar jshell -s
+-&gt; int a = 1;
+-&gt; int b = 2;
+</code></pre>
+<p>初学者还是别整这么安静了，使用 <code>-v</code> 开启详细反馈吧</p>
+<pre><code class="language-bash">➜  ~cedar jshell -v
+|  Welcome to JShell -- Version 11.0.9.1
+|  For an introduction type: /help intro
+
+jshell&gt;
+</code></pre>
+<h2 id="简单使用">简单使用</h2>
+<h3 id="变量赋值">变量赋值</h3>
+<p>赋几个值看看</p>
+<pre><code class="language-bash">jshell&gt; int a = 1
+a ==&gt; 1
+|  created variable a : int
+
+jshell&gt; a + 1
+$2 ==&gt; 2
+|  created scratch variable $2 : int
+
+jshell&gt; $2 + a
+$3 ==&gt; 3
+|  created scratch variable $3 : int
+</code></pre>
+<p>可见：没有指定变量的数字会自动赋值给临时变量，我们也可以使用这个临时变量</p>
+<h3 id="方法与类">方法与类</h3>
+<p>那创建方法呢？</p>
+<pre><code class="language-bash">jshell&gt; String addMark(Word word) {
+   ...&gt; return word.val + &quot;!&quot;;
+   ...&gt; }
+|  created method addMark(Word), however, it cannot be referenced until class Word is declared
+</code></pre>
+<p>这里方法传入了一个不存在的类，他告诉我们要定义这个类才能使用这个方法，那定义一下吧</p>
+<pre><code class="language-bash">
+jshell&gt; class Word {
+   ...&gt; String val;
+   ...&gt; public Word() {
+   ...&gt; val = &quot;hello word&quot;;
+   ...&gt; }
+   ...&gt; }
+|  created class Word
+|    update replaced method addMark(Word)
+</code></pre>
+<p>创建个对象调用一下</p>
+<pre><code class="language-bash">
+jshell&gt; Word words = new Word()
+words ==&gt; Word@2ef1e4fa
+|  created variable words : Word
+
+jshell&gt; addMark(words)
+$4 ==&gt; &quot;hello word!&quot;
+|  created scratch variable $4 : String
+</code></pre>
+<h3 id="内置命令">内置命令</h3>
+<p>输入 <code>/help</code> 就能看到所有可以使用的命令，例如列出所有变量</p>
+<pre><code class="language-bash">
+jshell&gt; /vars
+|    Word words = Word@2ef1e4fa
+|    String $4 = &quot;hello word!&quot;
+</code></pre>
+<h2 id="外部编辑器">外部编辑器</h2>
+<p>有没有觉得在命令行定义类或者方法啥的太费事了，其实 JShell 支持使用编辑器</p>
+<h3 id="使用默认编辑器">使用默认编辑器</h3>
+<p>先定义一个类</p>
+<pre><code class="language-bash">jshell&gt; class Friend{}
+|  已创建 类 Friend
+</code></pre>
+<p>调用自带的编辑器</p>
+<pre><code class="language-bash">jshell&gt; /edit Friend
+</code></pre>
+<p>如下图，点击 Accept 就行</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/20210223013703.png" alt="img"></p>
+<p>注意一定是之前定义好的片段，如下：</p>
+<pre><code class="language-bash">jshell&gt; /list
+
+   1 : int a = 1;
+   2 : int b = 2;
+   3 : int c = 1;
+   6 : class Friend{
+       String val = &quot;No Friend !!!&quot;;
+       }
+</code></pre>
+<p>否则会报错</p>
+<pre><code class="language-bash">jshell&gt; /edit Dog
+|  没有此类片段: Dog
+</code></pre>
+<h3 id="自定义编辑器">自定义编辑器</h3>
+<p>如果想自定义编辑器呢，自带的太不好用</p>
+<pre><code class="language-bash">jshell&gt; /set editor vim
+|  编辑器设置为: vim
+</code></pre>
+<pre><code class="language-bash">jshell&gt; /set editor &quot;C:\\Users\\cedar\\AppData\\Local\\Programs\\Microsoft VS Code\\code&quot; -w
+|  编辑器设置为: C:\Users\cedar\AppData\Local\Programs\Microsoft VS Code\code -w
+</code></pre>
+<p>该 <code>-w</code> 选项设置等待文件关闭后再返回</p>
+<p>上述设置是一次性的，想永久设置的话，使用 <code>-retain</code> 选项</p>
+<pre><code class="language-bash">jshell&gt; /set editor -retain vim
+</code></pre>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="vscode-duo-guang-biao-te-xing.html" class="prev-post">← VsCode 多光标特性</a>
+                    <a href="shan-chu-huo-xiu-gai-windows-zhong-bei-zhan-yong-de-wen-jian.html" class="next-post">删除或修改 Windows 中被占用的文件 →</a>
                 </div>
             </div>
 
@@ -654,13 +756,35 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#初识-jshell" class="outline-link">初识 JShell</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
+                            <a href="#启动与退出" class="outline-link">启动与退出</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#简单使用" class="outline-link">简单使用</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#变量赋值" class="outline-link">变量赋值</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#方法与类" class="outline-link">方法与类</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#内置命令" class="outline-link">内置命令</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#外部编辑器" class="outline-link">外部编辑器</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#使用默认编辑器" class="outline-link">使用默认编辑器</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#自定义编辑器" class="outline-link">自定义编辑器</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>

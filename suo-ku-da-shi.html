@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>锁库大师</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,266 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>锁库大师</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-05</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
+                    <h2 id="背景">背景</h2>
+<p>希望在顾客下单时对库存明细表中的商品进行库存锁定，库存明细表简化后如下所示：</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/202206130943348.png" alt="背景"></p>
+<p>可见一条产品编码有可能存在多条库存明细，客户的订单大致会锁定几十行的库存，要求如下：</p>
 <ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
+<li>尽可能快，并发也高，支持多节点</li>
+<li>为了数据的一致性，最好不用 redis 扣减的方案</li>
+<li>锁库同时在锁库流水表中插入锁库记录</li>
 </ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
+<h2 id="优化方案">优化方案</h2>
+<h3 id="分析">分析</h3>
+<p>通过分析系统现有的方案，发现锁库操作时间主要浪费在更新库存明细的锁库数量上，为了防止超卖，每一条更新必须加上库存校验（如下所示），一旦失败就要回滚，在加之 MySQL 并没有提供原生批量更新方法，只能每行库存执行一条 SQL，导致锁库时间较长。</p>
+<pre><code class="language-SQL">WHERE (stock_quantity - locking_quantity) &gt; 0
+</code></pre>
+<h3 id="提高锁库速度">提高锁库速度</h3>
+<p>优化的第一步就是想要提高批量锁库的速度，有没有方法能够在 MySQL 中模拟批量更新呢？</p>
+<h4 id="when-语句">WHEN 语句</h4>
+<p>答案就是使用 SQL 的 <code>when</code> 语句，在程序中拼接出如下的 SQL</p>
+<pre><code class="language-SQL">UPDATE p_stock_instance a  
+SET a.locking_quantity = CASE a.id  
+                             WHEN &#39;027dbba9c04a4ef0baab3983c64bc0b31123&#39; THEN 3  
+                             WHEN &#39;025d4574cd934b69993703e7e99e8ca43&#39; THEN 6  
+                             WHEN &#39;027dbba9c04a4ef0baab3983c64bc0b313&#39; THEN 2 END,  
+    a.update_date      = now()  
+WHERE CASE a.id  
+          WHEN &#39;027dbba9c04a4ef0baab3983c64bc0b31123&#39; THEN (a.stock_quantity - a.locking_quantity) &gt;= 3
+          WHEN &#39;025d4574cd934b69993703e7e99e8ca43&#39; THEN (a.stock_quantity - a.locking_quantity) &gt;= 6
+          WHEN &#39;027dbba9c04a4ef0baab3983c64bc0b313&#39; THEN (a.stock_quantity - a.locking_quantity) &gt;= 2
+          ELSE 0 END;
+</code></pre>
+<p>SQL 执行完毕后会返回更新行数，在程序中判断更新行数是否与预期相符即可判断是否更新成功，程序示意如下：</p>
+<pre><code class="language-java">Integer num = pStockInstanceDao.operationStockSmallData(operationMapping);  
+if (num != operationMapping.size()) {  
+    throw new RuntimeException(&quot;操作失败&quot;);  
+}
+</code></pre>
+<p>这种方法的更新速度很快，在我的测试中，更新两万行库存记录的耗时大约 17 秒。但其实还有更快的方法。</p>
+<h4 id="临时表">临时表</h4>
+<p>使用<strong>临时表更新库存</strong>的方法在数据量比较大的情况下比 WHEN 语句的性能好很多，测试条件下更新两万行库存记录耗时大约 1 秒</p>
+<p>临时表是 MySQL 中的一种特殊表，他有如下几个特征：</p>
 <ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
+<li>临时表是线程内可见，线程之间看不到其他线程创建的临时表</li>
+<li>线程推出后临时表就被销毁</li>
+<li>临时表与普通表重名时 MySQL 优先选择临时表操作</li>
 </ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+<p>本案例中创建临时表的语句如下：</p>
+<pre><code class="language-SQL">create temporary table temp_stock_operation  
+(  
+    stock_instance_id varchar(64) unique   not null comment &#39;库存实例ID&#39;,  
+    op_num            int                  not null comment &#39;操作数量&#39;,  
+    success           tinyint(1) default 0 not null comment &#39;是否成功&#39;  
+);
+</code></pre>
+<p><code>stock_instance_id</code> 就是库存明细表中的 <code>id</code></p>
+<p><strong>更新库存时</strong>：</p>
+<ol>
+<li>创建临时表</li>
+<li>先将每一行库存明细要锁定的库存数量插入到临时表中</li>
+<li>然后通过 UPDATE JOIN 语句批量更新库存，同时将是否更新成功的信息保存在临时表的 <code>success</code> 字段中</li>
+<li>统计 <code>success</code> 字段，判断是否回滚</li>
+<li>删除临时表</li>
+</ol>
+<p>使用的 UPDATE 语句如下：</p>
+<pre><code class="language-SQL">update temp_stock_operation o inner join p_stock_instance s  
+    on o.stock_instance_id = s.id  
+set o.success          = 1,  
+    s.locking_quantity = s.locking_quantity + o.op_num  
+where s.stock_quantity - s.locking_quantity &gt;= o.op_num  
+  and o.success = 0;
+</code></pre>
+<p>检查是否成功，该语句返回值为 0 或 1 。</p>
+<pre><code class="language-SQL">select count(*) = 0 as success  
+from temp_stock_operation  
+where success = 0;
+</code></pre>
+<p>最后删除临时表：</p>
+<pre><code class="language-SQL">drop temporary table temp_stock_operation;
+</code></pre>
+<h4 id="将二者结合">将二者结合</h4>
+<p>虽然使用临时表的方案更新大量数据时很快，但是如果使用这个方法来更新几十条库存时就会发现速度又变慢了，在我的测试中，更新三四十条的耗时几乎与更新两万条相等。</p>
+<p>就是说这条更新语句在数量少的时候性能会下降</p>
+<pre><code class="language-SQL">update temp_stock_operation o inner join p_stock_instance s  
+    on o.stock_instance_id = s.id  
+set o.success          = 1,  
+    s.locking_quantity = s.locking_quantity + o.op_num  
+where s.stock_quantity - s.locking_quantity &gt;= o.op_num  
+  and o.success = 0;
+</code></pre>
+<p>分析它的执行计划，发现当更新行数小于 45 时，JOIN 操作便不会走索引，而是全表扫描，导致性能下降。这时候即使使用下面的 SQL 语句强制索引也是<strong>没用的</strong>。</p>
+<pre><code class="language-SQL">update temp_stock_operation o force index for join (stock_instance_id)
+    inner join p_stock_instance s  
+    on o.stock_instance_id = s.id  
+set o.success          = 1,  
+    s.locking_quantity = s.locking_quantity + o.op_num  
+where s.stock_quantity - s.locking_quantity &gt;= o.op_num  
+  and o.success = 0;
+</code></pre>
+<p>所以我们要将这两种方法结合，来获得最佳的性能</p>
+<pre><code class="language-java">if (operationMapping.size() &lt; 45) {  
+    // WHEN 语句方案
+    Integer num = pStockInstanceDao.operationStockSmallData(operationMapping);  
+    if (num != operationMapping.size()) {  
+        throw new RuntimeException(&quot;操作失败&quot;);  
+    }  
+} else {  
+    // 临时表方案
+    Boolean success = pStockInstanceDao.operationStockBigData(operationMapping);  
+    if (!success) {  
+        throw new RuntimeException(&quot;操作失败&quot;);  
+    }  
+}
+</code></pre>
+<h3 id="提高并发量">提高并发量</h3>
+<p>由于并发时多个线程间存在竞态条件，可能导致库存扣减失败，而前面说到库存明细表中一件商品可能对应多条库存明细，就是说如果并发导致有一条库存明细扣减失败的话很可能这个商品在其他的库存明细中还有库存。而且由于无论更没更新成功，线程都会占有数据库行的写锁，这就要求我们更新失败时最好能够快速释放锁，这又会导致接口会误报库存不足。</p>
+<h4 id="商品编码锁">商品编码锁</h4>
+<p>一个解决办法如下</p>
+<ol>
+<li>线程在执行库存数量查询前为订单中的每个商品编码获取一个分布式锁，只有获得全部商品编码的锁时才进行库存的查询操作</li>
+<li>线程在更新完库存后释放所持有的商品编码锁</li>
+</ol>
+<pre><code class="language-java">RLock[] locks = productSids.seream()  
+        .distinct()  
+        .map(key -&gt; &quot;ced:pStockInstance:&quot; + key)  
+        .sorted()  
+        .map(key -&gt; redissonClient.getLock(key))  
+        .toArray(RLock[]::new);  
+RLock skuLock = redissonClient.getMultiLock(locks);
+
+// 加锁
+skuLock.lock();
+
+// 解锁
+skuLock.unlockAsync();
+</code></pre>
+<p>这种方法当所有的订单都锁定同一个商品时就会导致程序退化成串行执行，效率很慢。</p>
+<h4 id="和并请求">和并请求</h4>
+<p>由于前文我们已经将库存更新的方法优化的足够快，因此想高效地解决竞态条件的问题，可以将各个请求的参数在应用程序中合并在一起，然后使用一个线程批量扣减，从而避免线程间扣减冲突。</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/202206130944601.png" alt="合并请求"></p>
+<p>使线程阻塞并被唤醒的关键代码如下</p>
+<pre><code class="language-java">public class GuardedObject&lt;T, K&gt; {  
+    //受保护的对象  
+    T obj;  
+    final Lock lock = new ReentrantLock();  
+    final Condition done = lock.newCondition();  
+    final int timeout = 60;  
+    //保存所有GuardedObject  
+    final static Map&lt;Object, GuardedObject&gt; gos = new ConcurrentHashMap&lt;&gt;();  
+  
+    public GuardedObject(K key) {  
+        this.key = key;  
+    }  
+  
+    K key;  
+  
+    // 1. 被请求线程通过唯一 key 获得阻塞对象，然后将 key 存入消息，发送到扣减中心  
+    public static &lt;K&gt; GuardedObject create(K key) {  
+        GuardedObject go = new GuardedObject(key.toString());  
+        gos.put(key, go);  
+        return go;  
+    }   
+  
+    // 2. 被请求线程稍后调用阻塞对象的该方法，阻塞，等待被唤醒
+    public Optional&lt;T&gt; get(Predicate&lt;T&gt; p) {  
+        lock.lock();  
+        Long start = System.currentTimeMillis();  
+        try {  
+            while (!p.test(obj)) {  
+                done.await(timeout, TimeUnit.SECONDS);  
+                if (System.currentTimeMillis() - start &gt;= timeout * 1000) {  
+                    gos.remove(key);  
+                    break;  
+                }  
+            }  
+            return Optional.ofNullable(obj);  
+        } catch (InterruptedException e) {  
+            throw new RuntimeException(e);  
+        } finally {  
+            lock.unlock();  
+        }  
+    }  
+
+    // 3. 结果监听器根据结果消息中的 key 找到对应阻塞对象，传入结果并唤醒对应线程
+    public static &lt;K, T&gt; void fireEvent(K key, T obj) {  
+        GuardedObject go = gos.remove(key);  
+        if (go != null) {  
+            go.onChanged(obj);  
+        }  
+    } 
+  
+    //事件通知方法  
+    void onChanged(T obj) {  
+        lock.lock();  
+        try {  
+            this.obj = obj;  
+            done.signalAll();  
+        } finally {  
+            lock.unlock();  
+        }  
+    }  
+}
+</code></pre>
+<h2 id="性能测试">性能测试</h2>
+<p>实验环境为了获得最坏情况下的性能，在库存明细中存入了两万五千条同一商品，并将每一条的数据的库存数量设置为 1</p>
+<p>在我的电脑中启动两个服务接收请求，启动若干线程对该商品进行扣减，结果如下</p>
+<table>
+<thead>
+<tr>
+<th>请求线程数量</th>
+<th>总计锁库行数</th>
+<th>全部处理耗时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>100</td>
+<td>1000</td>
+<td>1 S</td>
+</tr>
+<tr>
+<td>500</td>
+<td>5000</td>
+<td>3 S</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>10000</td>
+<td>4 S</td>
+</tr>
+<tr>
+<td>2000</td>
+<td>20000</td>
+<td>8 S</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>25000</td>
+<td>12 S</td>
+</tr>
+</tbody></table>
+<h2 id="注意事项">注意事项</h2>
+<p>以下是我在编写代码时发现的一些需要注意的点：</p>
+<h3 id="唯一索引">唯一索引</h3>
+<p>在创建临时表时 <code>stock_instance_id</code> 要创建唯一索引，因为这个字段要充当 JOIN 语句的条件，实测不加唯一索引性能会很差。</p>
+<pre><code class="language-SQL">create temporary table temp_stock_operation  
+(  
+    stock_instance_id varchar(64) unique   not null comment &#39;库存实例ID&#39;, 
+</code></pre>
+<h3 id="加快消息队列读取">加快消息队列读取</h3>
+<p>扣减中心的库存扣减线程直接从消息队列读取消息效率较低，在本案例中，可以新建一个本地队列，用其他线程将消息队列中的消息搬运到本地队列，让扣减线程操作本地队列而不是消息队列，这样可以大幅提高扣减效率。</p>
+<hr>
+<p>源码请见：<a href="https://github.com/solidSpoon/inventory-lock-master">https://github.com/solidSpoon/inventory-lock-master</a></p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="mongodb-chu-tan.html" class="prev-post">← MongoDB 初探</a>
+                    <a href="spring-shi-wu-chuan-bo-te-xing.html" class="next-post">Spring 事务传播特性 →</a>
                 </div>
             </div>
 
@@ -654,13 +885,35 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#背景" class="outline-link">背景</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
+                            <a href="#优化方案" class="outline-link">优化方案</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#分析" class="outline-link">分析</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#提高锁库速度" class="outline-link">提高锁库速度</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#提高并发量" class="outline-link">提高并发量</a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#性能测试" class="outline-link">性能测试</a>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#注意事项" class="outline-link">注意事项</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#唯一索引" class="outline-link">唯一索引</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#加快消息队列读取" class="outline-link">加快消息队列读取</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>夏令时</title>
+    <title>正则表达式</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -617,35 +617,496 @@
     <div class="main-content">
         <div class="post-container">
             <div class="post-content-wrapper">
-                <h1>夏令时</h1>
+                <h1>正则表达式</h1>
                 <div class="post-meta">
-                    <span class="date">2025-03</span>
+                    <span class="date">2022-12</span>
                 </div>
                 <div class="post-content">
-                    <h2 id="举例">举例</h2>
-<p><strong>2018年3月11日02:00之后直接跳到03:00</strong></p>
+                    <p><a href="https://regex101.com/">正则测试</a><br><a href="https://regexper.com/">正则图</a></p>
+<h2 id="元字符">元字符</h2>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>特殊单字符</td>
+<td><code>.</code></td>
+<td>任意字符（换行除外）</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\d</code></td>
+<td>任意数字</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\D</code></td>
+<td>任意非数字</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\w</code></td>
+<td>任意字母数字下划线</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\W</code></td>
+<td>任意非字母数字下划线</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\s</code></td>
+<td>任意空白符</td>
+</tr>
+<tr>
+<td>特殊单字符</td>
+<td><code>\S</code></td>
+<td>任意非空白符</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>空白符</td>
+<td><code>\r</code></td>
+<td>回车符</td>
+</tr>
+<tr>
+<td>空白符</td>
+<td><code>\n</code></td>
+<td>换行符</td>
+</tr>
+<tr>
+<td>空白符</td>
+<td><code>\f</code></td>
+<td>换页符</td>
+</tr>
+<tr>
+<td>空白符</td>
+<td><code>\t</code></td>
+<td>制表符</td>
+</tr>
+<tr>
+<td>空白符</td>
+<td><code>\v</code></td>
+<td>垂直制表符</td>
+</tr>
+<tr>
+<td>空白符</td>
+<td><code>\s</code></td>
+<td>任意空白符</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>量词</td>
+<td><code>.</code></td>
+<td>0 到多次</td>
+</tr>
+<tr>
+<td>量词</td>
+<td><code>+</code></td>
+<td>1 到多次</td>
+</tr>
+<tr>
+<td>量词</td>
+<td><code>?</code></td>
+<td>0 到 1 次</td>
+</tr>
+<tr>
+<td>量词</td>
+<td><code>{m}</code></td>
+<td>出现 m 次</td>
+</tr>
+<tr>
+<td>量词</td>
+<td><code>{m,}</code></td>
+<td>出现至少 m 次</td>
+</tr>
+<tr>
+<td>量词</td>
+<td><code>{m,n}</code></td>
+<td>出现 m 到 n 次</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>范围</td>
+<td><code>|</code></td>
+<td>或，如 <code>ab|bc</code> 代表 ab 或 bc</td>
+</tr>
+<tr>
+<td>范围</td>
+<td><code>[...]</code></td>
+<td>多选1，括号中任意单个元素</td>
+</tr>
+<tr>
+<td>范围</td>
+<td><code>[a-z]</code></td>
+<td>匹配 a 到 z 之间任意单个元素</td>
+</tr>
+<tr>
+<td>范围</td>
+<td><code>[^...]</code></td>
+<td><strong>取反</strong>，不能是括号中任意单个元素</td>
+</tr>
+</tbody></table>
+<h2 id="贪婪模式">贪婪模式</h2>
+<h3 id="量词">量词</h3>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>同义符号</th>
+<th>含义</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>*</code></td>
+<td><code>{0,}</code></td>
+<td>0 到多次</td>
+<td><code>ab*</code> 可以匹配 <code>a</code>、<code>ab</code>、<code>abb</code> 等</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td><code>{1,}</code></td>
+<td>1 到多次</td>
+<td><code>ab+</code> 可以匹配 <code>ab</code>、<code>abb</code> 等，但不能匹配 <code>a</code></td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td><code>{0,1}</code></td>
+<td>0 到 1 次</td>
+<td><code>ab?</code> 可以匹配 <code>a</code>、<code>ab</code>，但不能匹配 <code>abb</code></td>
+</tr>
+</tbody></table>
+<h3 id="贪婪匹配-greedy">贪婪匹配（Greedy）</h3>
+<p>尽可能进行最长匹配</p>
+<p><strong>用法</strong>：贪婪匹配为默认模式，如 <code>a*</code></p>
+<p>匹配不上会回溯</p>
+<pre><code>字符串   aaabb
+下标     012345
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>匹配</th>
+<th>开始</th>
+<th>结束</th>
+<th>说明</th>
+<th>匹配内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第1次</td>
+<td>0</td>
+<td>3</td>
+<td>到第一个字母b发现不满足,输出aaa</td>
+<td>aaa</td>
+</tr>
+<tr>
+<td>第2次</td>
+<td>3</td>
+<td>3</td>
+<td>匹配剩下的bb,发现匹配不上,输出空字符串</td>
+<td>空字符串</td>
+</tr>
+<tr>
+<td>第3次</td>
+<td>4</td>
+<td>4</td>
+<td>匹配剩下的b,发现匹配不上,输出空字符串</td>
+<td>空字符串</td>
+</tr>
+<tr>
+<td>第4次</td>
+<td>5</td>
+<td>5</td>
+<td>匹配剩下空字符串,输出空字符串</td>
+<td>空字符串</td>
+</tr>
+</tbody></table>
+<h3 id="懒惰匹配-lazy">懒惰匹配（Lazy）</h3>
+<p>尽可能进行最短匹配</p>
+<p><strong>用法</strong>：在贪婪匹配后加 <code>?</code>，如 <code>a*?</code></p>
+<p>匹配不上不会回溯</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-165829.png" alt="|700"></p>
+<h3 id="独占匹配-possessive">独占匹配（Possessive）</h3>
+<p>与贪婪模式类似，尽可能进行最长匹配，如果匹配失败就结束，</p>
+<p><strong>不会进行回溯</strong>，比较节省时间。</p>
+<p><strong>用法</strong>：“数量”元字符后加 <code>+</code> 。如 <code>a*+</code></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>正则</th>
+<th>文本</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>贪婪模式</td>
+<td><code>a{1,3}ab</code></td>
+<td><code>aaab</code></td>
+<td>匹配</td>
+</tr>
+<tr>
+<td>非贪婪模式</td>
+<td><code>a{1,3}?ab</code></td>
+<td><code>aaab</code></td>
+<td>匹配</td>
+</tr>
+<tr>
+<td>独占模式</td>
+<td><code>a{1,3}+ab</code></td>
+<td><code>aaab</code></td>
+<td>不匹配</td>
+</tr>
+</tbody></table>
+<deflist>
+    <def title="回溯（Backtracking）">
+        <p>后面匹配不上，会吐出已匹配的再尝试</p>
+        <img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-165908.png" alt="" width="700" />
+    </def>
+</deflist>
+
+<h2 id="分组与引用">分组与引用</h2>
 <ul>
-<li>如果应用试图表示一个发生在2:30 AM的事件，该本地时间在当天根本无效。</li>
+<li>将某部分（子表达式）看成一个整体</li>
+<li>在后续查找或替换中引用分组</li>
 </ul>
-<p><strong>2018年11月4日凌晨时钟从02:00倒退回01:00</strong></p>
+<h3 id="分组与编号">分组与编号</h3>
+<p>括号在正则中可以用于分组，被括号括起来的部分“子表达式”会被保存成一个子组。第几个括号就是第几个分组。</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-165923.png" alt="|600"></p>
+<h3 id="非捕获分组">非捕获分组</h3>
+<p>在括号里面的会保存成子组，但有些情况下，你可能只想用括号将某些部分看成一个整体，后续不用再用它。</p>
+<p>用法：在括号中使用 <code>?:</code></p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>正则</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>保存子组</td>
+<td><code>(正则)</code></td>
+<td><code>\d{15}(\d{3})?</code></td>
+</tr>
+<tr>
+<td>不保存子组</td>
+<td><code>(?:正则)</code></td>
+<td><code>\d{15}(?:\d{3})?</code></td>
+</tr>
+</tbody></table>
+<h3 id="命名分组">命名分组</h3>
+<p>命名分组的格式为 <code>(?P&lt;分组名&gt;正则)</code></p>
+<pre><code>^profile/(?P&lt;username&gt;\w+)/$
+</code></pre>
+<h3 id="引用分组">引用分组</h3>
+<table>
+    <tr>
+        <td>
+            <img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-165950.png" width="500" alt=""/>
+        </td>
+        <td>
+            <img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-165959.png" width="500" alt=""/>
+        </td>
+    </tr>
+</table>
+
+<h2 id="匹配模式">匹配模式</h2>
+<p>匹配模式（Match Mode）：指的是正则中一些改变元字符匹配行为的方式，通过模式修饰符来指定</p>
+<p><strong>用法：</strong><code>(?模式标识)正则表达式</code></p>
+<p>可以将多种模式标识放一起 <code>(?标识1标识2)正则表达式</code></p>
+<p>可通过添加括号来改变模式标识<strong>作用范围</strong></p>
+<h3 id="不区分大小写模式-case-insensitive">不区分大小写模式（Case-Insensitive）</h3>
+<p><strong>用法</strong>：正则前添加模式修饰符 <code>(?i)</code></p>
+<p>例：</p>
+<p><code>(?i)cat</code> 不区分大小写的 cat，同 <code>[Cc][Aa][Tt]</code></p>
+<p>匹配两个 cat 时：</p>
+<table>
+<thead>
+<tr>
+<th>正则</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>(?i)(cat) \1</code></td>
+<td>可以匹配前后大小写不同，即 <code>(?i)</code> 范围包扩 <code>\i</code></td>
+</tr>
+<tr>
+<td><code>((?i)cat) \1</code></td>
+<td>前后大小写必须相同，限制了 <code>(?i)</code> 的范围</td>
+</tr>
+<tr>
+<td><code>((?i)(cat)) \1</code></td>
+<td>会多出一个子组，和 <code>((?i)(cat)) \2</code> 效果一样</td>
+</tr>
+</tbody></table>
+<h3 id="点号通配模式-dot-all">点号通配模式（Dot All）</h3>
+<p>也叫单行匹配模式（Single Line）</p>
+<p><strong>用法</strong>：正则前添加模式修饰符 <code>(?s)</code></p>
+<p>通常 <code>.</code> 不能匹配换行符，使用点号通配模式可以匹配上换行符</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-170013.png" alt="|500"></p>
+<p>也可以使用 <code>[\s\S]</code> 或 <code>[\d\D]</code> 或 <code>[\w\W]</code> 等实现匹配真正任意字符</p>
+<h3 id="多行匹配模式-multiline">多行匹配模式（Multiline）</h3>
+<p><strong>用法</strong>：正则前添加模式修饰符 <code>(?m)</code></p>
+<p>通常 <code>^</code> 匹配<strong>整个字符串</strong>的开头， <code>$</code> 匹配<strong>整个字符串</strong>的结尾</p>
+<p>多行匹配模式下会匹配<strong>每行</strong>的开头或结尾</p>
+<p><img src="https://ced-md-picture.oss-cn-beijing.aliyuncs.com/img/2021/11/27/20211127-170019.png" alt="|500"></p>
+<p>正则中还有<code>\A</code> 仅匹配整个字符串的开始，<code>\z</code> 仅匹配整个字符串的结束，在多行匹配模式下，它们的匹配行为不会改变，如果只想匹配整个字符串，而不是匹配每一行，用这个更严谨一些。</p>
+<h3 id="注释模式-comment">注释模式（Comment）</h3>
+<p>正则中书写注释</p>
+<p>用法 <code>(?#comment)</code></p>
+<p>例：</p>
+<p><code>(\w+) \1</code> 添加注释后 <code>(\w+)(?#word) \1(?#word repeat again)</code></p>
+<h2 id="断言">断言</h2>
+<h3 id="单词边界-word-boundary">单词边界（Word Boundary）</h3>
+<p><strong>用法</strong>：正则中使用\b 来表示单词的边界</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>tom</code> 单词包含 tom</th>
+<th><code>\btom</code> 以 tom 开头的单词</th>
+<th><code>tom\b</code> 以 tom 结尾的单词</th>
+<th><code>\btom\b</code> 只能是 tom</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tom</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>tomorrow</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>🚫</td>
+<td>🚫</td>
+</tr>
+<tr>
+<td><code>atom</code></td>
+<td>✅</td>
+<td>🚫</td>
+<td>✅</td>
+<td>🚫</td>
+</tr>
+<tr>
+<td><code>atomic</code></td>
+<td>✅</td>
+<td>🚫</td>
+<td>🚫</td>
+<td>🚫</td>
+</tr>
+</tbody></table>
+<p><code>\b\w+\b</code> 匹配单词，或者空格分隔的字符串等</p>
+<h2 id="行的开始或结束">行的开始或结束</h2>
+<p><strong>用法</strong>：使用 <code>^</code>和 <code>$</code>匹配行的开始或结束（多行匹配模式）<br><code>\A</code>和 <code>\z</code>匹配整个字符串的开始或结束，不受匹配模式的影响。</p>
+<p>例如：<code>^\d{6}$</code>匹配六位数字</p>
+<p>各平台换行符：</p>
+<table>
+<thead>
+<tr>
+<th>平台</th>
+<th>换行符号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Windows</td>
+<td><code>\r\n</code></td>
+</tr>
+<tr>
+<td>Linux</td>
+<td><code>\n</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>\n</code></td>
+</tr>
+</tbody></table>
+<h3 id="环视-look-around">环视（ Look Around）</h3>
+<p>也称零宽断言</p>
+<p><strong>用法</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>正则</th>
+<th>名称</th>
+<th>含义</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>(?&lt;=Y)</code></td>
+<td>肯定逆序环视 (Positive Lookbehind)</td>
+<td>左边是Y</td>
+<td><code>(?&lt;=\d)th</code> 左边是数字的th, 能匹配 <code>9th</code></td>
+</tr>
+<tr>
+<td><code>(?&lt;!Y)</code></td>
+<td>否定逆序环视 (Negative Lookbehind)</td>
+<td>左边不是Y</td>
+<td><code>(?&lt;!\d)th</code> 左边不是数字的th, 能匹配 <code>health</code></td>
+</tr>
+<tr>
+<td><code>(?=Y)</code></td>
+<td>肯定顺序环视 (Positive Lookahead)</td>
+<td>右边是Y</td>
+<td><code>six(?=\d)</code> 右边是数字的six, 能匹配 <code>six6</code></td>
+</tr>
+<tr>
+<td><code>(?!Y)</code></td>
+<td>否定顺序环视 (Negative Lookahead)</td>
+<td>右边不是Y</td>
+<td><code>hi(?!\d)</code> 右边不是数字的hi, 能匹配 <code>high</code></td>
+</tr>
+</tbody></table>
+<p><strong>口诀</strong>：</p>
 <ul>
-<li>1点到2点这一小时发生了两次</li>
-<li>一次为夏令时的EDT时区，一次为冬令时的EST时区</li>
+<li>左尖括号代表看左边</li>
+<li>没有尖括号是看右边</li>
+<li>感叹号是非的意思</li>
 </ul>
-<h2 id="切换规则">切换规则</h2>
-<p>在3月的第二个星期天，美国东部时间凌晨2:00，时钟提前至美国东部时间凌晨3:00，留下一小时的间隙。</p>
-<p>在11月的第一个星期日（美国东部时间）凌晨 2:00，时钟会移回美国东部时间凌晨1:00，这会导致重复一个小时。</p>
-<h2 id="名词解释">名词解释</h2>
-<p>DST: Daylight saving time 夏令时</p>
-<p>ET：<strong>美国东部时间</strong>（The Eastern Time Zone）分为两个部分：</p>
-<ul>
-<li>EST：<strong>东部标准时间</strong>（Eastern Standard Time, EST）比<a href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E8%B0%83%E4%B8%96%E7%95%8C%E6%97%B6" title="协调世界时">协调世界时</a> (UTC) 晚5小时。</li>
-<li>EDT：<strong>东部夏令时间</strong>（Eastern Daylight Time, EDT）在使用<a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6" title="夏时制">夏令时</a>之时比协调世界时晚四个小时。</li>
-</ul>
+<p><strong>表示环视的括号不算做子组</strong></p>
+<p><strong>例子</strong>：<br>匹配邮政编码<br><code>(?&lt;!\d)[1-9]\d{5}(?!\d)</code></p>
+<p>匹配单词<br><code>(?&lt;!\w)\w+(?!\w)``(?&lt;=\W)\w+(?=\W)``\b\w+\b</code></p>
+<p>JavaScript 不支持逆向环视(逆向断言)</p>
 
                 </div>
                 <div class="post-navigation">
-                    <a href="ai-shi-ru-he-xue-hui-liao-tian-de.html" class="prev-post">← AI 是如何学会聊天的</a>
+                    <a href="shi-yong-git-worktree-jiang-tong-yi-ge-xiang-mu-fen-lie-cheng-duo-ge-ben-di-mu-lu.html" class="prev-post">← 使用 Git worktree 将同一个项目分裂成多个本地目录</a>
+                    <a href="cha-kan-linux-fu-wu-qi-ri-zhi-de-ji-qiao.html" class="next-post">查看 Linux 服务器日志的技巧 →</a>
                 </div>
             </div>
 
@@ -654,13 +1115,74 @@
                     <div class="outline-title">目录</div>
                     <ul class="outline-list">
                         <li class="outline-item">
-                            <a href="#举例" class="outline-link">举例</a>
+                            <a href="#元字符" class="outline-link">元字符</a>
                         </li>
                         <li class="outline-item">
-                            <a href="#切换规则" class="outline-link">切换规则</a>
+                            <a href="#贪婪模式" class="outline-link">贪婪模式</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#量词" class="outline-link">量词</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#贪婪匹配-greedy" class="outline-link">贪婪匹配（Greedy）</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#懒惰匹配-lazy" class="outline-link">懒惰匹配（Lazy）</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#独占匹配-possessive" class="outline-link">独占匹配（Possessive）</a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="outline-item">
-                            <a href="#名词解释" class="outline-link">名词解释</a>
+                            <a href="#分组与引用" class="outline-link">分组与引用</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#分组与编号" class="outline-link">分组与编号</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#非捕获分组" class="outline-link">非捕获分组</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#命名分组" class="outline-link">命名分组</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#引用分组" class="outline-link">引用分组</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#匹配模式" class="outline-link">匹配模式</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#不区分大小写模式-case-insensitive" class="outline-link">不区分大小写模式（Case-Insensitive）</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#点号通配模式-dot-all" class="outline-link">点号通配模式（Dot All）</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#多行匹配模式-multiline" class="outline-link">多行匹配模式（Multiline）</a>
+                                </li>
+                                <li class="outline-item">
+                                    <a href="#注释模式-comment" class="outline-link">注释模式（Comment）</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#断言" class="outline-link">断言</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#单词边界-word-boundary" class="outline-link">单词边界（Word Boundary）</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="outline-item">
+                            <a href="#行的开始或结束" class="outline-link">行的开始或结束</a>
+                            <ul class="outline-subitems">
+                                <li class="outline-item">
+                                    <a href="#环视-look-around" class="outline-link">环视（ Look Around）</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
